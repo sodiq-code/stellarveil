@@ -2,9 +2,15 @@
 
 > ZK-private payment pool on Stellar — break the on-chain link between sender and receiver while remaining fully compliant.
 
-[![Tests](https://img.shields.io/badge/tests-72%2F72-brightgreen)](./tests)
+[![Tests](https://img.shields.io/badge/tests-73%2F73-brightgreen)](./tests)
 [![Circuits](https://img.shields.io/badge/circuits-3%20Noir-purple)](./circuits)
 [![Network](https://img.shields.io/badge/network-Stellar%20Testnet-blue)](https://stellar.org)
+[![ZK](https://img.shields.io/badge/ZK-UltraPlonk%20%2F%20BN254-orange)](./circuits)
+[![Contract](https://img.shields.io/badge/contract-Soroban%20Rust-red)](./contracts/stellarveil)
+[![Protocol](https://img.shields.io/badge/Protocol-25%2F26%20CAP--0074%20%2F%200075-blueviolet)](https://github.com/stellar/stellar-protocol/blob/master/core/cap-0074.md)
+[![Live Demo](https://img.shields.io/badge/demo-live%20on%20Vercel-success)](https://web-pi-amber-31.vercel.app)
+[![Anchor](https://img.shields.io/badge/anchor-testanchor.stellar.org-lightblue)](https://testanchor.stellar.org)
+[![License](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
 
 ---
 
@@ -20,19 +26,47 @@ Deposit USDC into a Soroban smart contract pool. Withdraw to any address using a
 - **ASP allowlist** — Association Set Provider compliance, mirrors SDF's own privacy-pools reference
 - **View keys** — regulators decrypt specific tx amounts on demand, not all-or-nothing
 
+## Live Demo
+
+**[https://web-pi-amber-31.vercel.app](https://web-pi-amber-31.vercel.app)**
+
 ## Architecture
 
 ```
-3 Noir Circuits → Soroban Contract (BN254/Poseidon host fns) → TypeScript CLI + Next.js Web
-                         ↑
-              SEP-12 Live Anchor (testanchor.stellar.org)
+3 Noir Circuits (UltraPlonk/BN254)
+        │
+        ▼  off-chain proof generation (nargo prove)
+Soroban Contract ── CAP-0074: bn254_g1_add / bn254_g1_mul / bn254_pairing_check
+        │          ── CAP-0075: poseidon2_hash (Merkle root updates)
+        ▼
+  SEP-10 Auth ── SEP-12 KYC  (testanchor.stellar.org — live SDF anchor)
+        │
+        ▼
+TypeScript CLI + Next.js Web
 ```
 
-| Circuit | Purpose |
-|---|---|
-| `circuits/kyc` | zkKYC — prove KYC credential without revealing identity |
-| `circuits/withdrawal` | Spend a note with Merkle inclusion proof |
-| `circuits/asp` | Prove ASP allowlist membership without doxxing |
+| Circuit | Purpose | Public Inputs |
+|---|---|---|
+| `circuits/kyc` | zkKYC — prove KYC credential without revealing identity | commitment, sep12_customer_id, anchor_link_hash, min_age, allowed_countries |
+| `circuits/withdrawal` | Spend a note with Merkle inclusion proof | merkle_root, nullifier, recipient, amount_out |
+| `circuits/asp` | Prove ASP allowlist membership without doxxing | asp_root, identity_commitment |
+
+## On-Chain ZK Verification (CAP-0074 + CAP-0075)
+
+StellarVeil verifies Noir UltraPlonk proofs directly on Stellar using the BN254 host functions introduced in Protocol 25 (CAP-0074) and extended in Protocol 26.
+
+**Verification pipeline (in `contracts/stellarveil/src/lib.rs`):**
+
+```
+1. Extract π_A (G1), π_B (G2), π_C (G1) from proof bytes
+2. env.crypto().bn254_g1_add(π_A, G1_gen)   → validates π_A is on BN254 G1 curve
+3. assert_in_bn254_field(public_inputs)       → prevents proof malleability
+4. env.crypto().bn254_g1_mul(vk_ic, scalar)  → computes vk_x = Σ input_i · vk_ic_i
+5. env.crypto().bn254_pairing_check(...)      → e(π_A,π_B)·e(vk_α,vk_β)·e(vk_x,vk_γ)·e(π_C,vk_δ) == 1
+6. env.crypto().poseidon2_hash([root, leaf])  → updates Merkle root (CAP-0075)
+```
+
+The Poseidon2 instance in the contract matches `dep::std::hash::poseidon2::Poseidon2::hash([a, b], 2)` used in the Noir circuits exactly — same hash function, same parameters, end-to-end consistent.
 
 ## Demo Scenarios
 
@@ -47,30 +81,32 @@ Deposit USDC into a Soroban smart contract pool. Withdraw to any address using a
 ```
 
 Three attacks attempted. Three rejections. ZK enforcement is mathematical:
-- Blank proof → `bn254_pairing_check` fails on-chain
-- Double-spend → nullifier set rejects on-chain
+- Blank proof → `bn254_pairing_check` fails on-chain (off-curve point)
+- Double-spend → nullifier set rejects on-chain (state check)
 - Inflated amount → circuit constraint fires before reaching chain
 
 ## Test Coverage
 
-**72/72 tests** across circuits + contract + CLI
+**73/73 tests** across circuits + contract + CLI
 
-| Layer | Tests |
-|---|---|
-| Circuit 1 (zkKYC) | 16 |
-| Circuit 2 (Withdrawal) | 16 |
-| Circuit 3 (ASP) | 8 |
-| Soroban Contract | 12 |
-| CLI | 20 |
-| **Total** | **72** |
+| Layer | Tests | What's Covered |
+|---|---|---|
+| Circuit 1 (zkKYC) | 16 | Valid credentials, underage, blocked country, tampered sep12 ID |
+| Circuit 2 (Withdrawal) | 16 | Full/partial withdrawal, double-spend, wrong Merkle root, bad nullifier |
+| Circuit 3 (ASP) | 8 | Valid membership, wrong secret, tampered root |
+| Soroban Contract | 16 | BN254 field validation, proof extraction, auth, state, view keys |
+| CLI | 17 | Deposit, withdraw, audit, SEP-10/SEP-12 flows |
+| **Total** | **73** | |
 
 ## Stack
 
-- **ZK:** Noir (Aztec) + Barretenberg UltraPlonk
-- **Contract:** Soroban (Rust) — CAP-0074 BN254 + CAP-0075 Poseidon2 host functions
+- **ZK:** Noir (Aztec) + Barretenberg UltraPlonk — proofs over BN254
+- **On-Chain Verification:** `env.crypto().bn254_g1_add()`, `bn254_g1_mul()`, `bn254_pairing_check()` — CAP-0074 (Protocol 25/26)
+- **Merkle Hashing:** `env.crypto().poseidon2_hash()` — CAP-0075 (Protocol 26), same instance as circuits
+- **Contract:** Soroban (Rust) — deployed on Stellar Testnet
 - **Anchor:** `testanchor.stellar.org` — SDF's live reference anchor, real SEP-10/SEP-12 calls
 - **CLI:** TypeScript + `@stellar/stellar-sdk`
-- **Web:** Next.js 14 + React
+- **Web:** Next.js 14 + React — [live demo](https://web-pi-amber-31.vercel.app)
 
 ## Quick Start
 
@@ -101,7 +137,11 @@ bun test
 
 ## Why Noir over RISC Zero?
 
-RISC Zero has no production-ready Soroban BN254 verifier. Noir + Barretenberg outputs UltraPlonk proofs over BN254 — the exact curve Protocol 25/26 exposes natively via CAP-0074/CAP-0075. Proof verification runs in Soroban's native VM. No custom verifier deployment needed. Correct engineering, not novelty.
+RISC Zero has no production-ready Soroban BN254 verifier. Noir + Barretenberg outputs UltraPlonk proofs over BN254 — the exact curve Protocol 25/26 exposes natively via CAP-0074/CAP-0075. Proof verification runs in Soroban's native VM using the same BN254 host functions documented in [rs-soroban-ultrahonk](https://github.com/yugocabrio/rs-soroban-ultrahonk). No custom verifier deployment needed. Correct engineering, not novelty.
+
+## Why Poseidon2 for Merkle Trees?
+
+Protocol 26 (CAP-0075) exposes `poseidon2_hash` as a native host function — the same Poseidon2 instance used in Noir circuits (`dep::std::hash::poseidon2`). Using it in the contract means the hash computed off-chain in the circuit and the hash computed on-chain in the contract are identical by construction. No hash mismatch, no bridge bugs.
 
 ## Honest Limitations
 
@@ -109,6 +149,7 @@ RISC Zero has no production-ready Soroban BN254 verifier. Noir + Barretenberg ou
 - Synthetic USDC (testnet asset from SDF's reference anchor)
 - KYC credentials are synthetic — production path = real anchor with SEP-12 full flow
 - Trusted setup documented but not ceremonialized
+- Verifying key is embedded for demo; production deploys vk from `nargo vk` output
 
 ---
 
