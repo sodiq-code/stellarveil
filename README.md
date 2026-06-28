@@ -96,7 +96,7 @@ StellarVeil verifies Noir UltraPlonk proofs directly on Stellar using the BN254 
 7. poseidon2_permutation([root, leaf])         → Merkle root update (CAP-0075)
 ```
 
-The `poseidon2_permutation` call uses `env.crypto_hazmat().poseidon2_permutation()` — the CAP-0075 host function, matching the exact Poseidon2 instance used in the Noir circuits (`dep::std::hash::poseidon2`). Same hash, same parameters, end-to-end consistent.
+The `poseidon2_permutation` call uses `env.crypto_hazmat().poseidon2_permutation()` — the CAP-0075 host function, the same Poseidon2 host function used in the Noir circuits (`dep::std::hash::poseidon2`). The two are structurally consistent — same sponge construction, same BN254 field. The demo contract initialises round constants to zero (2 rounds) to keep the on-chain footprint minimal; production would use the full MDS constants, completing end-to-end consistency.
 
 ## Threat Model
 
@@ -146,7 +146,7 @@ Three attacks attempted. Three rejections. ZK enforcement is mathematical:
 
 - **ZK:** Noir (Aztec) + Barretenberg UltraPlonk — proofs over BN254
 - **On-Chain Verification:** `bn254.g1_is_on_curve()`, `bn254.g1_mul()`, `bn254.g1_msm()`, `bn254.pairing_check()` — CAP-0074 (Protocol 25/26)
-- **Merkle Hashing:** `env.crypto_hazmat().poseidon2_permutation()` — CAP-0075 (Protocol 26), same instance as circuits
+- **Merkle Hashing:** `env.crypto_hazmat().poseidon2_permutation()` — CAP-0075 (Protocol 26), structurally consistent with circuit Poseidon2; demo uses minimal round constants
 - **Contract:** Soroban (Rust) — deployed on Stellar Testnet
 - **Anchor:** `testanchor.stellar.org` — SDF's live reference anchor, real SEP-10/SEP-12 calls
 - **CLI:** TypeScript + `@stellar/stellar-sdk`
@@ -185,7 +185,7 @@ RISC Zero has no production-ready Soroban BN254 verifier. Noir + Barretenberg ou
 
 ## Why Poseidon2 for Merkle Trees?
 
-Protocol 26 (CAP-0075) exposes `poseidon2_hash` as a native host function — the same Poseidon2 instance used in Noir circuits (`dep::std::hash::poseidon2`). Using it in the contract means the hash computed off-chain in the circuit and the hash computed on-chain in the contract are identical by construction. No hash mismatch, no bridge bugs.
+Protocol 26 (CAP-0075) exposes `poseidon2_permutation` as a native host function — the same sponge construction used in Noir circuits (`dep::std::hash::poseidon2`). Using the same host function in both circuit and contract eliminates hash-mismatch bugs at the architecture level. The demo initialises round constants to zero for simplicity; a production deployment supplies the full Poseidon2 MDS constants, at which point on-chain and off-chain hashes are identical by construction.
 
 ## Honest Limitations
 
