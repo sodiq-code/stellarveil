@@ -150,7 +150,7 @@ Three attacks attempted. Three rejections. ZK enforcement is mathematical:
 - **Contract:** Soroban (Rust) — deployed on Stellar Testnet
 - **Anchor:** `testanchor.stellar.org` — SDF's live reference anchor, real SEP-10/SEP-12 calls
 - **CLI:** TypeScript + `@stellar/stellar-sdk`
-- **Web:** Next.js 14 + React — [live demo](https://web-pi-amber-31.vercel.app)
+- **Web:** Next.js 14 + React — [live demo](https://web-pi-amber-31.vercel.app) *(deployed on Vercel; `web/` source not included in this repo — see demo link)*
 
 ## Quick Start
 

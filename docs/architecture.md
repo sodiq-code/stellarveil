@@ -66,9 +66,9 @@ TypeScript CLI using Commander.js. Commands:
 - `stellarveil withdraw` — dual-proof generation + Soroban TX
 - `stellarveil audit` — decrypt stored notes with view key
 
-### 4. Web UI (`web/`)
+### 4. Web UI (Vercel — not in this repo)
 
-Next.js 14 app with Tailwind CSS. Pages:
+Next.js 14 app with Tailwind CSS, deployed at [web-pi-amber-31.vercel.app](https://web-pi-amber-31.vercel.app). Pages:
 - `/` — Landing page with architecture overview
 - `/send` — Deposit flow with step-by-step UI
 - `/receive` — Withdrawal flow with progress tracking
