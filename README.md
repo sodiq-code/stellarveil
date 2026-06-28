@@ -36,8 +36,8 @@ Deposit USDC into a Soroban smart contract pool. Withdraw to any address using a
 3 Noir Circuits (UltraPlonk/BN254)
         │
         ▼  off-chain proof generation (nargo prove)
-Soroban Contract ── CAP-0074: bn254_g1_add / bn254_g1_mul / bn254_pairing_check
-        │          ── CAP-0075: poseidon2_hash (Merkle root updates)
+Soroban Contract ── CAP-0074: bn254.g1_is_on_curve / g1_mul / g1_msm / pairing_check
+        │          ── CAP-0075: poseidon2_permutation (Merkle root updates)
         ▼
   SEP-10 Auth ── SEP-12 KYC  (testanchor.stellar.org — live SDF anchor)
         │
@@ -59,14 +59,15 @@ StellarVeil verifies Noir UltraPlonk proofs directly on Stellar using the BN254 
 
 ```
 1. Extract π_A (G1), π_B (G2), π_C (G1) from proof bytes
-2. env.crypto().bn254_g1_add(π_A, G1_gen)   → validates π_A is on BN254 G1 curve
-3. assert_in_bn254_field(public_inputs)       → prevents proof malleability
-4. env.crypto().bn254_g1_mul(vk_ic, scalar)  → computes vk_x = Σ input_i · vk_ic_i
-5. env.crypto().bn254_pairing_check(...)      → e(π_A,π_B)·e(vk_α,vk_β)·e(vk_x,vk_γ)·e(π_C,vk_δ) == 1
-6. env.crypto().poseidon2_hash([root, leaf])  → updates Merkle root (CAP-0075)
+2. bn254.g1_is_on_curve(π_A)                  → curve-membership check (CAP-0074)
+3. assert_in_bn254_fr(public_inputs)           → Fr field range check, prevents malleability
+4. bn254.g1_msm(points, scalars)              → vk_x = Σ inputᵢ · vk_icᵢ  (multi-scalar mul)
+5. bn254.g1_mul(G1_gen, scalar)               → scalar×generator for nullifier/ASP commits
+6. bn254.pairing_check([π_A, π_C], [π_B, G2_gen]) → final pairing equation on-chain
+7. poseidon2_permutation([root, leaf])         → Merkle root update (CAP-0075)
 ```
 
-The Poseidon2 instance in the contract matches `dep::std::hash::poseidon2::Poseidon2::hash([a, b], 2)` used in the Noir circuits exactly — same hash function, same parameters, end-to-end consistent.
+The `poseidon2_permutation` call uses `env.crypto_hazmat().poseidon2_permutation()` — the CAP-0075 host function, matching the exact Poseidon2 instance used in the Noir circuits (`dep::std::hash::poseidon2`). Same hash, same parameters, end-to-end consistent.
 
 ## Demo Scenarios
 
@@ -101,8 +102,8 @@ Three attacks attempted. Three rejections. ZK enforcement is mathematical:
 ## Stack
 
 - **ZK:** Noir (Aztec) + Barretenberg UltraPlonk — proofs over BN254
-- **On-Chain Verification:** `env.crypto().bn254_g1_add()`, `bn254_g1_mul()`, `bn254_pairing_check()` — CAP-0074 (Protocol 25/26)
-- **Merkle Hashing:** `env.crypto().poseidon2_hash()` — CAP-0075 (Protocol 26), same instance as circuits
+- **On-Chain Verification:** `bn254.g1_is_on_curve()`, `bn254.g1_mul()`, `bn254.g1_msm()`, `bn254.pairing_check()` — CAP-0074 (Protocol 25/26)
+- **Merkle Hashing:** `env.crypto_hazmat().poseidon2_permutation()` — CAP-0075 (Protocol 26), same instance as circuits
 - **Contract:** Soroban (Rust) — deployed on Stellar Testnet
 - **Anchor:** `testanchor.stellar.org` — SDF's live reference anchor, real SEP-10/SEP-12 calls
 - **CLI:** TypeScript + `@stellar/stellar-sdk`
