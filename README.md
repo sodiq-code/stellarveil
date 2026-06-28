@@ -187,6 +187,29 @@ RISC Zero has no production-ready Soroban BN254 verifier. Noir + Barretenberg ou
 
 Protocol 26 (CAP-0075) exposes `poseidon2_permutation` as a native host function — the same sponge construction used in Noir circuits (`dep::std::hash::poseidon2`). Using the same host function in both circuit and contract eliminates hash-mismatch bugs at the architecture level. The demo initialises round constants to zero for simplicity; a production deployment supplies the full Poseidon2 MDS constants, at which point on-chain and off-chain hashes are identical by construction.
 
+## Design Decisions
+
+### Why Noir over RISC Zero or Circom?
+RISC Zero targets STARK-based proofs — no native BN254 pairing on Soroban, so you'd need a custom on-chain verifier. Circom produces Groth16/PLONK over BN254 but requires a trusted per-circuit setup ceremony. Noir + Barretenberg outputs UltraPlonk proofs over BN254 with a universal trusted setup — and Protocol 25/26 exposes exactly those BN254 operations as host functions via CAP-0074. The pairing check runs natively in Soroban's VM; no custom verifier contract needed.
+
+### Why UltraPlonk over Groth16?
+Groth16 needs a separate trusted setup ceremony per circuit. UltraPlonk uses a universal SRS — one ceremony covers all circuits. For a system with 3 circuits (KYC, Withdrawal, ASP), that avoids 3 separate MPC ceremonies and simplifies trust assumptions.
+
+### Why BN254 and not BLS12-381?
+Stellar Protocol 25 (CAP-0074) chose BN254 specifically for its gas efficiency in pairing operations on-chain. BLS12-381 has better security margin but no native host support on Soroban. BN254 is the correct curve for this deployment target.
+
+### Why Poseidon2 over Pedersen or SHA-256?
+Poseidon2 is a ZK-native hash — designed for minimal R1CS/PLONK constraints. SHA-256 inside a Noir circuit costs ~25k gates. Poseidon2 costs ~300 gates for a 2-input hash. CAP-0075 also exposes it as a host function, so the same hash runs efficiently both inside the circuit (constraint-minimal) and on-chain (native VM operation). No other hash achieves both.
+
+### Why SEP-10 + SEP-12 over a custom KYC oracle?
+Using the SDF's live reference anchor (`testanchor.stellar.org`) means KYC verification uses real infrastructure that any Stellar project can integrate. A custom oracle would require trust in a new entity. SEP-10/12 is an established standard with an existing ecosystem of compliant anchors — the same anchors MoneyGram and YellowCard use in production.
+
+### Why inclusion proofs for ASP (not blocklist/non-inclusion)?
+Non-inclusion proofs require the prover to show they are absent from a blocklist. The privacy property breaks down at scale — a sufficiently small blocklist leaks information about who is on it through proof size and witness shape. Inclusion proofs against a compliant-address allowlist flip the model: the ASP operator publishes a Merkle root of known-good addresses. Provers demonstrate membership without revealing which leaf they are. This mirrors the SDF's own Privacy Pools reference design and Ethereum's EIP-7503 direction.
+
+### Why view keys instead of full transparency?
+All-or-nothing regulatory access — where a court order reveals all transactions — is a privacy failure for every user, not just the target. Per-transaction view keys (NaCl box, shared only with the auditor) allow a specific deposit/withdrawal to be decrypted on demand. No other user's privacy is compromised. This satisfies FATF's Travel Rule selective-disclosure interpretation without a surveillance backdoor.
+
 ## Honest Limitations
 
 - Testnet only — mainnet requires formal security audit
