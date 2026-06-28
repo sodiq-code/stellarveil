@@ -21,7 +21,7 @@
 
 #![no_std]
 use soroban_sdk::{
-    contract, contractimpl, contracttype, symbol_short,
+    contract, contractevent, contractimpl, symbol_short,
     Address, Bytes, BytesN, Env, Map, Symbol, Vec, U256,
     crypto::bn254::{Bn254Fr, Bn254G1Affine, Bn254G2Affine},
 };
@@ -37,17 +37,7 @@ const ENCRYPTED_NOTES: Symbol = symbol_short!("ENC_NTS");
 const POOL_BALANCE:    Symbol = symbol_short!("POOL_BAL");
 const USDC_TOKEN:      Symbol = symbol_short!("USDC_TKN");
 
-// ── BN254 G1 generator (affine, big-endian)
-// G1_GEN = (1, 2) — standard BN254 generator point
-const BN254_G1_GEN: [u8; 64] = {
-    let mut b = [0u8; 64];
-    b[63] = 0x01; // x = 1
-    b[127 - 64] = 0x00; // y high bytes
-    // y = 2
-    b[63] = 0x01;
-    // rebuild: x at [0..32], y at [32..64]
-    b
-};
+
 
 // ── BN254 scalar field modulus r (Fr) — big-endian, 32 bytes
 // r = 21888242871839275222246405745257275088548364400416034343698204186575808495617
@@ -59,8 +49,7 @@ const BN254_FR_MODULUS: [u8; 32] = [
 ];
 
 // ── Data types ────────────────────────────────────────────────────────────────
-#[contracttype]
-#[derive(Clone)]
+#[contractevent]
 pub struct DepositEvent {
     pub leaf_index:        u32,
     pub note_commitment:   BytesN<32>,
@@ -69,8 +58,7 @@ pub struct DepositEvent {
     pub encrypted_note:    Bytes,
 }
 
-#[contracttype]
-#[derive(Clone)]
+#[contractevent]
 pub struct WithdrawEvent {
     pub nullifier: BytesN<32>,
     pub recipient: Address,
@@ -165,16 +153,14 @@ impl StellarVeilContract {
         notes.set(leaf_index, encrypted_note.clone());
         env.storage().instance().set(&ENCRYPTED_NOTES, &notes);
 
-        env.events().publish(
-            (symbol_short!("deposit"), depositor.clone()),
-            DepositEvent {
-                leaf_index,
-                note_commitment: note_commitment.clone(),
-                sep12_customer_id,
-                scenario_type,
-                encrypted_note,
-            },
-        );
+        DepositEvent {
+            leaf_index,
+            note_commitment: note_commitment.clone(),
+            sep12_customer_id,
+            scenario_type,
+            encrypted_note,
+        }
+        .publish(&env);
 
         leaf_index
     }
@@ -232,10 +218,7 @@ impl StellarVeilContract {
         let token_client = soroban_sdk::token::Client::new(&env, &usdc);
         token_client.transfer(&env.current_contract_address(), &recipient, &amount);
 
-        env.events().publish(
-            (symbol_short!("withdraw"), nullifier.clone()),
-            WithdrawEvent { nullifier, recipient, amount },
-        );
+        WithdrawEvent { nullifier, recipient, amount }.publish(&env);
     }
 
     // ── View Key Registry ─────────────────────────────────────────────────────
@@ -612,7 +595,7 @@ mod tests {
     fn setup() -> (Env, Address, StellarVeilContractClient<'static>) {
         let env = Env::default();
         env.mock_all_auths();
-        let contract_id = env.register_contract(None, StellarVeilContract);
+        let contract_id = env.register(StellarVeilContract, ());
         let client = StellarVeilContractClient::new(&env, &contract_id);
         let usdc = Address::generate(&env);
         let asp_provider = Address::generate(&env);
