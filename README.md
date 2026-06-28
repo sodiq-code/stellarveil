@@ -98,6 +98,20 @@ StellarVeil verifies Noir UltraPlonk proofs directly on Stellar using the BN254 
 
 The `poseidon2_permutation` call uses `env.crypto_hazmat().poseidon2_permutation()` — the CAP-0075 host function, matching the exact Poseidon2 instance used in the Noir circuits (`dep::std::hash::poseidon2`). Same hash, same parameters, end-to-end consistent.
 
+## Threat Model
+
+| Threat | Mitigation | Layer |
+|--------|-----------|-------|
+| On-chain transaction linkage (sender↔receiver) | Nullifier-based note scheme — no direct link in contract state | ZK Circuit |
+| Fake KYC credential | Poseidon2 commitment bound to real anchor `credential_hash`; anchor verifies hash before issuing SEP-12 response | SEP-12 + Circuit |
+| Double-spend (reuse same note) | Nullifier stored in contract after first withdrawal; second attempt rejected on-chain | Soroban |
+| Proof forgery (fabricated UltraPlonk proof) | `bn254.pairing_check` on-chain — soundness backed by discrete-log hardness over BN254 | CAP-0074 |
+| Off-curve points / malleability | `bn254.g1_is_on_curve()` + Fr field range check before any arithmetic | CAP-0074 |
+| OFAC/sanctions evasion | ASP inclusion proof required at withdrawal — prover must be in current allowlist Merkle tree | ZK Circuit + Soroban |
+| Merkle root staleness (griefing) | Admin-controlled `set_asp_merkle_root` with expected ≤24h update cadence | Governance |
+| View key privacy violation | NaCl box encryption — view key decrypts note amounts only, no spending capability | Cryptography |
+| Regulatory all-or-nothing demand | Selective disclosure via per-tx view keys — only specific notes decrypted on demand | View Key Design |
+
 ## Demo Scenarios
 
 - **Remittance** — Nigeria → Philippines corridor, private USDC transfer
