@@ -26,6 +26,10 @@ Deposit USDC into a Soroban smart contract pool. Withdraw to any address using a
 - **ASP allowlist** — Association Set Provider compliance, mirrors SDF's own privacy-pools reference
 - **View keys** — regulators decrypt specific tx amounts on demand, not all-or-nothing
 
+## Demo Video
+
+**[▶ Watch on YouTube](https://youtu.be/oG3Zm-DAYL0)**
+
 ## Live Demo
 
 **[https://web-pi-amber-31.vercel.app](https://web-pi-amber-31.vercel.app)**
@@ -181,6 +185,7 @@ Protocol 26 (CAP-0075) exposes `poseidon2_hash` as a native host function — th
 
 | Resource | URL |
 |---|---|
+| Demo Video | https://youtu.be/oG3Zm-DAYL0 |
 | Live Demo | https://web-pi-amber-31.vercel.app |
 | GitHub Repo | https://github.com/sodiq-code/stellarveil |
 | Soroban Contract | [`contracts/stellarveil/src/lib.rs`](./contracts/stellarveil/src/lib.rs) |
