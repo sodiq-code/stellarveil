@@ -30,6 +30,16 @@ Deposit USDC into a Soroban smart contract pool. Withdraw to any address using a
 
 **[https://web-pi-amber-31.vercel.app](https://web-pi-amber-31.vercel.app)**
 
+## Screenshots
+
+| ZK-KYC Deposit | Generating ZK Proof |
+|---|---|
+| ![Deposit Form](./docs/screenshots/deposit-form.png) | ![ZK Proof Generation](./docs/screenshots/deposit-zk-proof.png) |
+
+| Selective Audit Trail | Protocol Architecture |
+|---|---|
+| ![Audit Trail](./docs/screenshots/audit-trail.png) | ![Architecture](./docs/screenshots/architecture.png) |
+
 ## Architecture
 
 ```
@@ -151,6 +161,18 @@ Protocol 26 (CAP-0075) exposes `poseidon2_hash` as a native host function — th
 - KYC credentials are synthetic — production path = real anchor with SEP-12 full flow
 - Trusted setup documented but not ceremonialized
 - Verifying key is embedded for demo; production deploys vk from `nargo vk` output
+
+## Links
+
+| Resource | URL |
+|---|---|
+| Live Demo | https://web-pi-amber-31.vercel.app |
+| GitHub Repo | https://github.com/sodiq-code/stellarveil |
+| Soroban Contract | [`contracts/stellarveil/src/lib.rs`](./contracts/stellarveil/src/lib.rs) |
+| Noir Circuits | [`circuits/`](./circuits) |
+| CAP-0074 (BN254) | https://github.com/stellar/stellar-protocol/blob/master/core/cap-0074.md |
+| CAP-0075 (Poseidon2) | https://github.com/stellar/stellar-protocol/blob/master/core/cap-0075.md |
+| SDF Anchor (live) | https://testanchor.stellar.org |
 
 ---
 
