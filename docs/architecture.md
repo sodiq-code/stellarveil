@@ -28,7 +28,7 @@ StellarVeil is a privacy-preserving DeFi protocol on Stellar/Soroban. It enables
                │
        ┌───────▼──────────────────────────────┐
        │     ASP (Address Screening Provider) │
-       │  OFAC sanctions Merkle tree           │
+       │  Compliant-address allowlist tree     │
        │  Updated periodically by admin        │
        └───────────────────────────────────────┘
 ```
@@ -41,7 +41,7 @@ StellarVeil is a privacy-preserving DeFi protocol on Stellar/Soroban. It enables
 |---------|------|---------|
 | KYC | `circuits/kyc/src/main.nr` | Proves valid KYC credential commitment |
 | Withdrawal | `circuits/withdrawal/src/main.nr` | Proves note ownership + nullifier validity |
-| ASP | `circuits/asp/src/main.nr` | Proves non-inclusion in sanctions Merkle tree |
+| ASP | `circuits/asp/src/main.nr` | Proves inclusion in the compliant-address allowlist Merkle tree |
 
 All circuits use **Poseidon2** (BN254) as the hash function and compile to UltraPlonk proofs via Barretenberg (`@aztec/bb.js`).
 
@@ -50,14 +50,14 @@ All circuits use **Poseidon2** (BN254) as the hash function and compile to Ultra
 Written in Rust. Key state:
 - `commitments: Map<BytesN<32>, bool>` — all valid deposit commitments
 - `nullifiers: Map<BytesN<32>, bool>` — spent nullifiers (double-spend prevention)
-- `asp_merkle_root: BytesN<32>` — current OFAC sanctions Merkle root
+- `asp_merkle_root: BytesN<32>` — current ASP allowlist Merkle root
 - `pool_balances: Map<String, i128>` — asset → shielded balance
 
 Key functions:
 - `initialize(admin)` — one-time setup
 - `deposit(proof, commitment, asset, amount)` — verify KYC proof + record commitment
 - `withdraw(nullifier, recipient, proof_w, proof_a, commitment, amount)` — dual-proof verification + fund release
-- `set_asp_merkle_root(new_root)` — admin only, update sanctions list root
+- `set_asp_merkle_root(new_root)` — admin only, update ASP allowlist root
 
 ### 3. CLI (`cli/`)
 
@@ -102,7 +102,7 @@ Next.js 14 app with Tailwind CSS. Pages:
    }
 4. Noir Circuit 3: Generate ASP proof {
      Public:  asp_merkle_root, leaf_hash(user_address)
-     Private: merkle_path (non-inclusion witness)
+     Private: merkle_path (inclusion witness — proves address is in allowlist)
    }
 5. Soroban TX: withdraw(nullifier, recipient, proof_w, proof_a, commitment, amount)
 6. Contract: verify proofs → record nullifier → release funds
@@ -115,7 +115,7 @@ Next.js 14 app with Tailwind CSS. Pages:
 | KYC without identity disclosure | Poseidon2 commitment; anchor verifies hash |
 | Unlinkable deposits/withdrawals | Note commitments hide amount + owner |
 | Double-spend prevention | On-chain nullifier set |
-| Sanctions compliance | ASP Merkle non-inclusion proof |
+| Sanctions compliance | ASP Merkle inclusion proof — prover must be in the compliant allowlist |
 | Selective disclosure | Separate view key (NaCl encrypted notes) |
 
 ## Security Assumptions
