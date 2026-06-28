@@ -25,3 +25,8 @@ body {
 .glow-violet { box-shadow: 0 0 20px rgba(124, 58, 237, 0.3); }
 .glow-cyan   { box-shadow: 0 0 20px rgba(6, 182, 212, 0.3); }
 .glow-text   { text-shadow: 0 0 12px rgba(124, 58, 237, 0.6); }
+
+/* Input utility */
+.input-base {
+  @apply w-full bg-veil-bg border border-veil-border rounded-lg px-3 py-2 text-sm text-veil-text focus:outline-none focus:border-veil-primary;
+}
