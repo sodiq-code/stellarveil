@@ -32,13 +32,28 @@ Deposit USDC into a Soroban smart contract pool. Withdraw to any address using a
 
 ## Screenshots
 
-| ZK-KYC Deposit | Generating ZK Proof |
-|---|---|
-| ![Deposit Form](./docs/screenshots/deposit-form.png) | ![ZK Proof Generation](./docs/screenshots/deposit-zk-proof.png) |
-
-| Selective Audit Trail | Protocol Architecture |
-|---|---|
-| ![Audit Trail](./docs/screenshots/audit-trail.png) | ![Architecture](./docs/screenshots/architecture.png) |
+<table>
+<tr>
+<td align="center" width="50%">
+<img src="./docs/screenshots/deposit-form.png" alt="Deposit Form"/><br/>
+<em>ZK-KYC deposit — enter secret, amount, KYC hash, and view key. Identity never leaves the client.</em>
+</td>
+<td align="center" width="50%">
+<img src="./docs/screenshots/deposit-zk-proof.png" alt="ZK Proof Generation"/><br/>
+<em>Noir UltraPlonk proof generation (Circuit 1 — zkKYC). Commitment computed off-chain before hitting Soroban.</em>
+</td>
+</tr>
+<tr>
+<td align="center" width="50%">
+<img src="./docs/screenshots/audit-trail.png" alt="Audit Trail"/><br/>
+<em>Selective audit trail — view key holder decrypts notes (commitment, nullifier, amount, scenario) without spending access.</em>
+</td>
+<td align="center" width="50%">
+<img src="./docs/screenshots/architecture.png" alt="Protocol Architecture"/><br/>
+<em>System architecture — Noir prover + ASP Merkle server feed dual proofs into Soroban for on-chain BN254 verification.</em>
+</td>
+</tr>
+</table>
 
 ## Architecture
 
