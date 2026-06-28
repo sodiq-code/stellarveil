@@ -208,7 +208,7 @@ Using the SDF's live reference anchor (`testanchor.stellar.org`) means KYC verif
 Non-inclusion proofs require the prover to show they are absent from a blocklist. The privacy property breaks down at scale — a sufficiently small blocklist leaks information about who is on it through proof size and witness shape. Inclusion proofs against a compliant-address allowlist flip the model: the ASP operator publishes a Merkle root of known-good addresses. Provers demonstrate membership without revealing which leaf they are. This mirrors the SDF's own Privacy Pools reference design and Ethereum's EIP-7503 direction.
 
 ### Why view keys instead of full transparency?
-All-or-nothing regulatory access — where a court order reveals all transactions — is a privacy failure for every user, not just the target. Per-transaction view keys (NaCl box, shared only with the auditor) allow a specific deposit/withdrawal to be decrypted on demand. No other user's privacy is compromised. This satisfies FATF's Travel Rule selective-disclosure interpretation without a surveillance backdoor.
+All-or-nothing regulatory access, where a court order reveals all transactions, is a privacy failure for every user beyond the target. Per-transaction view keys (NaCl box, shared only with the designated auditor) allow a specific deposit or withdrawal to be decrypted on demand. No other user's data is exposed. This satisfies the FATF Travel Rule selective-disclosure interpretation without granting blanket surveillance access.
 
 ## Honest Limitations
 
