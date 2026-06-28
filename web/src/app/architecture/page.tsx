@@ -44,7 +44,7 @@ const layers = [
     label: 'Soroban Contract',
     color: 'bg-cyan-500/20 border-cyan-500/40 text-cyan-300',
     items: ['deposit()', 'withdraw()', 'nullifier_set', 'commitment_map'],
-    desc: 'On-chain proof verification',
+    desc: 'BN254 g1_is_on_curve · g1_msm · pairing_check (CAP-0074) + poseidon2_permutation (CAP-0075)',
   },
   {
     label: 'Stellar Anchor',
@@ -124,7 +124,7 @@ export default function ArchitecturePage() {
               <div className="bg-veil-bg border-2 border-cyan-500/50 rounded-xl px-8 py-4 text-center max-w-xs">
                 <div className="text-2xl mb-1">📦</div>
                 <div className="text-sm font-bold text-cyan-400">Soroban Contract</div>
-                <div className="text-xs text-veil-muted">Proof verify · Nullifier set · Commitment map</div>
+                <div className="text-xs text-veil-muted">g1_is_on_curve · g1_msm · pairing_check · poseidon2_permutation</div>
               </div>
             </div>
           </div>
