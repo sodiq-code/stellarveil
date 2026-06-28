@@ -1,0 +1,17 @@
+node_modules/
+target/
+.env
+.env.local
+.env.testnet
+.stellarveil/
+dist/
+build/
+.next/
+proofs/
+*.proof
+*.vk
+*.pk
+Cargo.lock
+package-lock.json
+bun.lockb
+.DS_Store

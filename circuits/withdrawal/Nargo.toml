@@ -1,0 +1,7 @@
+[package]
+name = "stellarveil_withdrawal"
+type = "bin"
+authors = ["sodiq-code"]
+compiler_version = ">=0.36.0"
+
+[dependencies]

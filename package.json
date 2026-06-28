@@ -1,0 +1,24 @@
+{
+  "name": "stellarveil",
+  "version": "0.1.0",
+  "description": "Privacy-preserving DeFi on Stellar using ZK proofs, SEP-10/12 KYC, and Soroban smart contracts",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "build:cli": "cd cli && npm run build",
+    "build:web": "cd web && npm run build",
+    "dev:web": "cd web && npm run dev",
+    "lint": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@stellar/stellar-sdk": "^12.3.0",
+    "@vitest/coverage-v8": "^2.0.3",
+    "tweetnacl": "^1.0.3",
+    "tweetnacl-util": "^0.15.1",
+    "typescript": "^5.5.3",
+    "vitest": "^2.0.3"
+  }
+}

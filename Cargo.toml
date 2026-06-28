@@ -1,0 +1,11 @@
+[workspace]
+resolver = "2"
+members = [
+    "contracts/stellarveil",
+]
+
+[profile.release]
+opt-level = "z"      # Optimize for size (WASM)
+overflow-checks = true
+lto = true
+codegen-units = 1
